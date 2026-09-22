@@ -1,0 +1,611 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Tonewright</title>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Fraunces:wght@500;600;700&family=IBM+Plex+Sans:wght@400;500;600&family=IBM+Plex+Mono:wght@400;500&display=swap">
+<style>
+  :root {
+    --bg: #F2F5F3;
+    --surface: #FFFFFF;
+    --surface-2: #E8EDE9;
+    --ink: #13201C;
+    --ink-soft: #57655F;
+    --rule: #D7DED9;
+    --accent: #1F6F5C;
+    --accent-ink: #FFFFFF;
+    --accent-soft: #DCEEE6;
+    --added: #1F6F5C;
+    --added-soft: #DCEEE6;
+    --added-ink: #0E4235;
+    --removed: #B33951;
+    --removed-soft: #F8E3E8;
+    --removed-ink: #7A1F34;
+    --shadow: rgba(20, 30, 26, 0.08);
+    color-scheme: light dark;
+  }
+  @media (prefers-color-scheme: dark) {
+    :root {
+      --bg: #0E1513;
+      --surface: #161F1B;
+      --surface-2: #1E2925;
+      --ink: #E9F1EC;
+      --ink-soft: #9BAEA6;
+      --rule: #2A3A34;
+      --accent: #55C6A4;
+      --accent-ink: #06251C;
+      --accent-soft: #163C31;
+      --added: #55C6A4;
+      --added-soft: #163C31;
+      --added-ink: #BEF0DD;
+      --removed: #E58098;
+      --removed-soft: #3A1B23;
+      --removed-ink: #F6C4D1;
+      --shadow: rgba(0, 0, 0, 0.4);
+    }
+  }
+  * { box-sizing: border-box; }
+  html, body { margin: 0; padding: 0; }
+  body {
+    background: var(--bg);
+    color: var(--ink);
+    font-family: "IBM Plex Sans", system-ui, sans-serif;
+    line-height: 1.55;
+  }
+  .wrap {
+    max-width: 860px;
+    margin: 0 auto;
+    padding: 40px 20px 64px;
+    display: flex;
+    flex-direction: column;
+    gap: 24px;
+  }
+  .hero { padding-block: 8px 4px; }
+  .kicker {
+    font-family: "IBM Plex Mono", monospace;
+    font-size: 12px;
+    letter-spacing: 0.12em;
+    color: var(--accent);
+    text-transform: uppercase;
+    margin: 0 0 10px;
+  }
+  h1 {
+    font-family: "Fraunces", Georgia, serif;
+    font-weight: 600;
+    font-size: clamp(32px, 6vw, 44px);
+    margin: 0 0 12px;
+    text-wrap: balance;
+  }
+  .lede { color: var(--ink-soft); max-width: 60ch; margin: 0; font-size: 15.5px; }
+
+  .budget-bar {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    font-size: 12.5px;
+    color: var(--ink-soft);
+    margin-top: 14px;
+    flex-wrap: wrap;
+  }
+  .budget-track {
+    flex: 1 1 160px;
+    max-width: 240px;
+    height: 6px;
+    background: var(--surface-2);
+    border-radius: 999px;
+    overflow: hidden;
+  }
+  .budget-fill { height: 100%; background: var(--accent); width: 0%; }
+
+  .passcode-row {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    font-size: 12.5px;
+    color: var(--ink-soft);
+    margin-top: 4px;
+    flex-wrap: wrap;
+  }
+  #passcode-input {
+    font-family: "IBM Plex Mono", monospace;
+    font-size: 12.5px;
+    padding: 5px 8px;
+    border-radius: 6px;
+    border: 1px solid var(--rule);
+    background: var(--surface);
+    color: var(--ink);
+    width: 140px;
+  }
+
+  .card {
+    background: var(--surface);
+    border: 1px solid var(--rule);
+    border-radius: 14px;
+    padding: 24px;
+    box-shadow: 0 1px 2px var(--shadow);
+  }
+  .card-head { display: flex; align-items: baseline; justify-content: space-between; gap: 12px; margin-bottom: 16px; }
+  .card-head h2 { font-family: "Fraunces", Georgia, serif; font-weight: 600; font-size: 20px; margin: 0; }
+
+  .example-flag {
+    font-size: 13px;
+    color: var(--ink-soft);
+    background: var(--surface-2);
+    border: 1px dashed var(--rule);
+    border-radius: 8px;
+    padding: 8px 12px;
+    margin: 0 0 18px;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 10px;
+    flex-wrap: wrap;
+  }
+  .example-flag button {
+    background: none; border: none; color: var(--accent); font: inherit;
+    font-weight: 500; cursor: pointer; padding: 0; text-decoration: underline; text-underline-offset: 2px;
+  }
+
+  .field-block { margin-bottom: 20px; }
+  .field-label { display: block; font-weight: 500; font-size: 14px; margin-bottom: 8px; }
+  .field-label .hint { font-weight: 400; color: var(--ink-soft); font-size: 13px; margin-left: 6px; }
+
+  .sample-block {
+    border: 1px solid var(--rule);
+    border-radius: 10px;
+    padding: 10px 12px 12px;
+    margin-bottom: 10px;
+    background: var(--bg);
+  }
+  .sample-head { display: flex; align-items: center; justify-content: space-between; margin-bottom: 6px; }
+  .sample-num {
+    font-family: "IBM Plex Mono", monospace; font-size: 12px; color: var(--ink-soft);
+    letter-spacing: 0.04em; text-transform: uppercase;
+  }
+  .icon-btn { background: none; border: none; color: var(--ink-soft); cursor: pointer; font-size: 16px; line-height: 1; padding: 2px 4px; border-radius: 4px; }
+  .icon-btn:hover { color: var(--removed); background: var(--surface-2); }
+
+  textarea, input[type="text"] {
+    width: 100%;
+    font-family: "IBM Plex Mono", monospace;
+    font-size: 14px;
+    color: var(--ink);
+    background: var(--surface);
+    border: 1px solid var(--rule);
+    border-radius: 8px;
+    padding: 10px 12px;
+    resize: vertical;
+  }
+  .sample-block textarea { background: var(--surface); }
+  textarea:focus-visible, input:focus-visible, button:focus-visible { outline: 2px solid var(--accent); outline-offset: 1px; }
+
+  .add-btn {
+    background: none; border: 1px dashed var(--rule); color: var(--accent);
+    font: inherit; font-size: 13px; font-weight: 500; padding: 7px 12px;
+    border-radius: 8px; cursor: pointer; width: 100%;
+  }
+  .add-btn:hover { background: var(--accent-soft); }
+
+  .chip-row { display: flex; flex-wrap: wrap; gap: 8px; margin-bottom: 10px; }
+  .chip {
+    display: inline-flex; align-items: center; gap: 6px; background: var(--accent-soft);
+    color: var(--added-ink); border-radius: 999px; padding: 5px 6px 5px 12px; font-size: 13px;
+  }
+  .chip button { background: none; border: none; color: inherit; cursor: pointer; font-size: 14px; line-height: 1; padding: 2px 6px; border-radius: 999px; }
+  .chip button:hover { background: rgba(0,0,0,0.08); }
+
+  .profile-actions, .work-actions { display: flex; align-items: center; gap: 12px; margin-top: 4px; flex-wrap: wrap; }
+
+  .primary-btn {
+    background: var(--accent); color: var(--accent-ink); border: none; font: inherit;
+    font-weight: 600; font-size: 14px; padding: 10px 18px; border-radius: 8px; cursor: pointer;
+  }
+  .primary-btn:hover { filter: brightness(1.06); }
+  .primary-btn:disabled { opacity: 0.55; cursor: default; }
+
+  .ghost-btn {
+    background: none; border: 1px solid var(--rule); color: var(--ink); font: inherit;
+    font-size: 13px; font-weight: 500; padding: 9px 14px; border-radius: 8px; cursor: pointer;
+  }
+  .ghost-btn:hover { background: var(--surface-2); }
+
+  .status { font-size: 13px; color: var(--ink-soft); }
+  .status.error { color: var(--removed); }
+  .save-state { font-size: 13px; color: var(--accent); }
+
+  .spinner {
+    display: inline-block; width: 13px; height: 13px; border: 2px solid var(--rule);
+    border-top-color: var(--accent); border-radius: 50%; animation: spin 0.8s linear infinite;
+    vertical-align: -2px; margin-right: 6px;
+  }
+  @keyframes spin { to { transform: rotate(360deg); } }
+  @media (prefers-reduced-motion: reduce) { .spinner { animation-duration: 2.4s; } }
+
+  #profile-summary { display: flex; align-items: center; justify-content: space-between; gap: 12px; flex-wrap: wrap; font-size: 14px; color: var(--ink-soft); }
+  #profile-summary strong { color: var(--ink); font-weight: 600; }
+
+  #draft-input { margin-bottom: 8px; }
+  #result-area { margin-top: 24px; padding-top: 20px; border-top: 1px solid var(--rule); }
+  .notes-summary { font-size: 14px; color: var(--ink-soft); font-style: italic; margin: 0 0 18px; }
+
+  .diff-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; margin-bottom: 20px; }
+  @media (max-width: 680px) { .diff-grid { grid-template-columns: 1fr; } }
+  .col-label { font-family: "IBM Plex Mono", monospace; font-size: 11px; letter-spacing: 0.1em; text-transform: uppercase; color: var(--ink-soft); margin: 0 0 8px; }
+  .diff-text {
+    font-family: "IBM Plex Mono", monospace; font-size: 13.5px; line-height: 1.7;
+    background: var(--bg); border: 1px solid var(--rule); border-radius: 10px;
+    padding: 14px 16px; white-space: pre-wrap; word-wrap: break-word;
+  }
+  mark.removed { background: var(--removed-soft); color: var(--removed-ink); border-radius: 3px; padding: 0 2px; }
+  mark.added { background: var(--added-soft); color: var(--added-ink); border-radius: 3px; padding: 0 2px; }
+  sup.tag { font-family: "IBM Plex Mono", monospace; font-size: 10px; color: var(--ink-soft); margin-left: 1px; }
+
+  .notes-block ol { margin: 0; padding-left: 20px; font-size: 14px; }
+  .notes-block li { margin-bottom: 8px; }
+  .notes-block .quote-shift { color: var(--ink-soft); font-family: "IBM Plex Mono", monospace; font-size: 12.5px; display: block; margin-top: 2px; }
+
+  .foot-note { font-size: 12.5px; color: var(--ink-soft); text-align: center; margin-top: 8px; }
+</style>
+</head>
+<body>
+<div class="wrap">
+  <header class="hero">
+    <p class="kicker">Style-matched rewrites</p>
+    <h1>Tonewright</h1>
+    <p class="lede">Teach it your voice with reference text and a few explicit rules, then hand it any draft &mdash; it rewrites the draft to match, and shows exactly what moved and why.</p>
+    <div class="budget-bar">
+      <span id="budget-label">Group budget: loading&hellip;</span>
+      <div class="budget-track"><div class="budget-fill" id="budget-fill"></div></div>
+    </div>
+    <div class="passcode-row">
+      <label for="passcode-input">Access code</label>
+      <input type="text" id="passcode-input" placeholder="shared passcode" autocomplete="off">
+      <span id="passcode-state"></span>
+    </div>
+  </header>
+
+  <section class="card" id="profile-card">
+    <div class="card-head">
+      <h2>1 &middot; Define the target style</h2>
+      <button class="ghost-btn" id="toggle-profile" type="button" hidden>Collapse</button>
+    </div>
+
+    <div id="profile-body">
+      <p class="example-flag" id="example-flag">This is example content, so you can see how it works. <button type="button" id="clear-example">Clear it and start fresh</button></p>
+
+      <div class="field-block">
+        <label class="field-label">Reference samples <span class="hint">text already written in the tone you want</span></label>
+        <div id="samples-list"></div>
+        <button type="button" class="add-btn" id="add-sample">+ Add another sample</button>
+      </div>
+
+      <div class="field-block">
+        <label class="field-label">Explicit rules <span class="hint">short, literal instructions &mdash; applied even over the samples' quirks</span></label>
+        <div class="chip-row" id="rules-list"></div>
+        <input type="text" id="rule-input" placeholder="Type a rule and press Enter &mdash; e.g. &ldquo;no exclamation points&rdquo;">
+      </div>
+
+      <div class="profile-actions">
+        <button type="button" class="primary-btn" id="save-profile">Save style profile</button>
+        <span class="save-state" id="save-state"></span>
+      </div>
+    </div>
+
+    <div id="profile-summary" hidden></div>
+  </section>
+
+  <section class="card" id="work-card">
+    <div class="card-head"><h2>2 &middot; Adjust a text</h2></div>
+
+    <label class="field-label" for="draft-input">Draft to rewrite</label>
+    <textarea id="draft-input" rows="7"></textarea>
+
+    <div class="work-actions">
+      <button type="button" class="primary-btn" id="rewrite-btn">Rewrite my text</button>
+      <span class="status" id="status-text"></span>
+    </div>
+
+    <div id="result-area">
+      <p class="example-flag" id="result-example-flag">Example result &mdash; click &ldquo;Rewrite my text&rdquo; to generate a real one from your saved style.</p>
+      <p class="notes-summary" id="notes-summary"></p>
+      <div class="diff-grid">
+        <div class="diff-col"><p class="col-label">Original</p><div class="diff-text" id="diff-original"></div></div>
+        <div class="diff-col"><p class="col-label">Rewritten</p><div class="diff-text" id="diff-rewritten"></div></div>
+      </div>
+      <div class="notes-block"><p class="col-label">Edit notes</p><ol id="notes-list"></ol></div>
+      <button type="button" class="ghost-btn" id="copy-btn">Copy rewritten text</button>
+    </div>
+  </section>
+
+  <p class="foot-note">Rewrites are generated by Claude (Haiku) against a shared group budget. Your style profile and access code are saved only in this browser.</p>
+</div>
+
+<script>
+(function () {
+  var STORAGE_KEY = "tonewright.profile.v1";
+  var PASSCODE_KEY = "tonewright.passcode.v1";
+  var API_BASE = "https://puyzurvbozufyxlqbkca.supabase.co/functions/v1/tonewright/";
+
+  var EXAMPLE_PROFILE = {
+    samples: ["We're moving the release to March 3. Two integration bugs surfaced in QA, and we'd rather fix them properly than ship around them. The updated timeline gives us three extra days for regression testing. We'll share the final build by Thursday."],
+    rules: ["No exclamation points", "Sentences under 20 words", "Say “we”, not “the team”"]
+  };
+  var EXAMPLE_DRAFT = "I just wanted to reach out and let you know that we think it might possibly be a good idea to maybe consider pushing back the launch date, since there could potentially be a few issues that we haven't fully looked into yet, and we don't want to rush things if we don't have to!";
+  var EXAMPLE_RESULT = {
+    notes: "Cut the hedging (“might possibly”, “maybe”, “could potentially”), shortened the sentences, and dropped the closing exclamation point to match the calm, direct reference tone.",
+    segments: [
+      { kind: "changed", before: "I just wanted to reach out and let you know that we think it might possibly be a good idea to maybe consider pushing back the launch date, since there could potentially be a few issues that we haven't fully looked into yet", after: "We should push back the launch date. A few issues still need looking into", reason: "Cut the throat-clearing and hedging; lead with the decision" },
+      { kind: "changed", before: ", and we don't want to rush things if we don't have to!", after: ", and we don't want to rush.", reason: "Tightened the closing line and dropped the exclamation point" }
+    ]
+  };
+
+  var profile = { samples: [""], rules: [] };
+  var savedProfile = null;
+  var isExample = true;
+
+  var el = {};
+  ["samples-list", "rules-list", "rule-input", "add-sample", "save-profile", "save-state",
+   "profile-summary", "profile-body", "toggle-profile", "example-flag", "clear-example",
+   "draft-input", "rewrite-btn", "status-text", "result-area",
+   "result-example-flag", "notes-summary", "diff-original", "diff-rewritten",
+   "notes-list", "copy-btn", "passcode-input", "passcode-state", "budget-label", "budget-fill"
+  ].forEach(function (id) {
+    el[id.replace(/-([a-z])/g, function (_, c) { return c.toUpperCase(); })] = document.getElementById(id);
+  });
+
+  try {
+    var savedCode = localStorage.getItem(PASSCODE_KEY);
+    if (savedCode) el.passcodeInput.value = savedCode;
+  } catch (e) {}
+  el.passcodeInput.addEventListener("input", function () {
+    try { localStorage.setItem(PASSCODE_KEY, el.passcodeInput.value); } catch (e) {}
+  });
+
+  function refreshBudget() {
+    fetch(API_BASE + "budget").then(function (r) { return r.json(); }).then(function (data) {
+      var used = (data.totalCents / 100);
+      var limit = (data.limitCents / 100);
+      el.budgetLabel.textContent = "Group budget: $" + used.toFixed(2) + " of $" + limit.toFixed(2) + " used";
+      var pct = limit > 0 ? Math.min(100, (data.totalCents / data.limitCents) * 100) : 0;
+      el.budgetFill.style.width = pct + "%";
+    }).catch(function () {
+      el.budgetLabel.textContent = "Group budget: unavailable";
+    });
+  }
+
+  function loadProfile() {
+    try {
+      var raw = localStorage.getItem(STORAGE_KEY);
+      if (raw) {
+        var parsed = JSON.parse(raw);
+        if (parsed && Array.isArray(parsed.samples) && Array.isArray(parsed.rules)) savedProfile = parsed;
+      }
+    } catch (e) {}
+    if (savedProfile) {
+      profile = { samples: savedProfile.samples.slice(), rules: savedProfile.rules.slice() };
+      isExample = false;
+    } else {
+      profile = { samples: EXAMPLE_PROFILE.samples.slice(), rules: EXAMPLE_PROFILE.rules.slice() };
+      isExample = true;
+    }
+  }
+
+  function renderSamples() {
+    el.samplesList.textContent = "";
+    profile.samples.forEach(function (text, i) {
+      var block = document.createElement("div");
+      block.className = "sample-block";
+      var head = document.createElement("div");
+      head.className = "sample-head";
+      var num = document.createElement("span");
+      num.className = "sample-num";
+      num.textContent = "Sample " + (i + 1);
+      head.appendChild(num);
+      if (profile.samples.length > 1) {
+        var rm = document.createElement("button");
+        rm.type = "button"; rm.className = "icon-btn"; rm.setAttribute("aria-label", "Remove this sample"); rm.textContent = "×";
+        rm.addEventListener("click", function () { profile.samples.splice(i, 1); renderSamples(); });
+        head.appendChild(rm);
+      }
+      block.appendChild(head);
+      var ta = document.createElement("textarea");
+      ta.rows = 4; ta.value = text;
+      ta.addEventListener("input", function () { profile.samples[i] = ta.value; });
+      block.appendChild(ta);
+      el.samplesList.appendChild(block);
+    });
+  }
+
+  function renderRules() {
+    el.rulesList.textContent = "";
+    profile.rules.forEach(function (rule, i) {
+      var chip = document.createElement("span");
+      chip.className = "chip";
+      var text = document.createElement("span"); text.textContent = rule;
+      chip.appendChild(text);
+      var rm = document.createElement("button");
+      rm.type = "button"; rm.setAttribute("aria-label", "Remove rule"); rm.textContent = "×";
+      rm.addEventListener("click", function () { profile.rules.splice(i, 1); renderRules(); });
+      chip.appendChild(rm);
+      el.rulesList.appendChild(chip);
+    });
+  }
+
+  function renderProfileSummary() {
+    if (!savedProfile) return;
+    el.profileSummary.textContent = "";
+    var count = document.createElement("span");
+    var sCount = savedProfile.samples.filter(function (s) { return s.trim(); }).length;
+    var rCount = savedProfile.rules.length;
+    var strong = document.createElement("strong"); strong.textContent = "Style profile saved";
+    count.appendChild(strong);
+    var detail = document.createElement("span");
+    detail.textContent = " — " + sCount + " sample" + (sCount === 1 ? "" : "s") + " · " + rCount + " rule" + (rCount === 1 ? "" : "s");
+    count.appendChild(detail);
+    el.profileSummary.appendChild(count);
+    var editBtn = document.createElement("button");
+    editBtn.type = "button"; editBtn.className = "ghost-btn"; editBtn.textContent = "Edit";
+    editBtn.addEventListener("click", function () { setEditorExpanded(true); });
+    el.profileSummary.appendChild(editBtn);
+  }
+
+  function setEditorExpanded(expanded) {
+    if (expanded) {
+      el.profileBody.hidden = false; el.profileSummary.hidden = true;
+      el.toggleProfile.hidden = !savedProfile; el.toggleProfile.textContent = "Collapse";
+    } else {
+      el.profileBody.hidden = true; el.profileSummary.hidden = false;
+      el.toggleProfile.hidden = true; renderProfileSummary();
+    }
+  }
+
+  el.toggleProfile.addEventListener("click", function () { setEditorExpanded(false); });
+  el.addSample.addEventListener("click", function () {
+    profile.samples.push(""); renderSamples();
+    var boxes = el.samplesList.querySelectorAll("textarea");
+    if (boxes.length) boxes[boxes.length - 1].focus();
+  });
+  el.ruleInput.addEventListener("keydown", function (e) {
+    if (e.key !== "Enter") return;
+    e.preventDefault();
+    var val = el.ruleInput.value.trim();
+    if (!val) return;
+    profile.rules.push(val); el.ruleInput.value = ""; renderRules();
+  });
+  el.clearExample.addEventListener("click", function () {
+    profile = { samples: [""], rules: [] }; renderSamples(); renderRules();
+  });
+
+  el.saveProfile.addEventListener("click", function () {
+    var cleanSamples = profile.samples.map(function (s) { return s.trim(); }).filter(function (s) { return s; });
+    var cleanRules = profile.rules.slice();
+    if (!cleanSamples.length && !cleanRules.length) {
+      el.saveState.textContent = "Add at least one sample or rule first.";
+      setTimeout(function () { el.saveState.textContent = ""; }, 3000);
+      return;
+    }
+    savedProfile = { samples: cleanSamples, rules: cleanRules };
+    try { localStorage.setItem(STORAGE_KEY, JSON.stringify(savedProfile)); el.saveState.textContent = "Saved"; }
+    catch (e) { el.saveState.textContent = "Saved for this session only (browser storage unavailable)."; }
+    isExample = false; el.exampleFlag.hidden = true;
+    setTimeout(function () { el.saveState.textContent = ""; }, 2500);
+    setEditorExpanded(false);
+  });
+
+  function reconstruct(segments, field) {
+    return segments.map(function (seg) { return seg.kind === "same" ? (seg.text || "") : (seg[field] || ""); }).join("");
+  }
+
+  function renderDiff(result, draftText) {
+    var segments = result && Array.isArray(result.segments) ? result.segments : null;
+    var aligned = false;
+    if (segments) aligned = reconstruct(segments, "before") === draftText;
+
+    el.notesSummary.textContent = (result && result.notes) ? result.notes : "";
+    el.diffOriginal.textContent = ""; el.diffRewritten.textContent = ""; el.notesList.textContent = "";
+
+    if (!segments) {
+      el.diffOriginal.textContent = draftText;
+      el.diffRewritten.textContent = "Couldn't generate a rewrite — try again.";
+      return;
+    }
+    if (!aligned) {
+      el.diffOriginal.textContent = draftText;
+      el.diffRewritten.textContent = reconstruct(segments, "after");
+      segments.filter(function (s) { return s.kind === "changed" && s.reason; }).forEach(function (s) {
+        var li = document.createElement("li"); li.textContent = s.reason; el.notesList.appendChild(li);
+      });
+      return;
+    }
+    var counter = 0;
+    segments.forEach(function (seg) {
+      if (seg.kind === "same") {
+        el.diffOriginal.appendChild(document.createTextNode(seg.text || ""));
+        el.diffRewritten.appendChild(document.createTextNode(seg.text || ""));
+        return;
+      }
+      counter += 1; var n = counter;
+      var mo = document.createElement("mark"); mo.className = "removed"; mo.textContent = seg.before || "";
+      el.diffOriginal.appendChild(mo);
+      var supO = document.createElement("sup"); supO.className = "tag"; supO.textContent = String(n);
+      el.diffOriginal.appendChild(supO);
+      var ma = document.createElement("mark"); ma.className = "added"; ma.textContent = seg.after || "";
+      el.diffRewritten.appendChild(ma);
+      var supA = document.createElement("sup"); supA.className = "tag"; supA.textContent = String(n);
+      el.diffRewritten.appendChild(supA);
+      var li = document.createElement("li");
+      var reasonText = document.createElement("span"); reasonText.textContent = seg.reason || "Adjusted to match the target style.";
+      li.appendChild(reasonText);
+      var quote = document.createElement("span"); quote.className = "quote-shift";
+      quote.textContent = "“" + (seg.before || "") + "” → “" + (seg.after || "") + "”";
+      li.appendChild(quote);
+      el.notesList.appendChild(li);
+    });
+  }
+
+  function setBusy(busy) {
+    el.rewriteBtn.disabled = busy;
+    el.statusText.className = "status";
+    el.statusText.textContent = "";
+    if (busy) {
+      var spin = document.createElement("span"); spin.className = "spinner";
+      el.statusText.appendChild(spin);
+      el.statusText.appendChild(document.createTextNode("Matching tone…"));
+    }
+  }
+
+  el.rewriteBtn.addEventListener("click", function () {
+    var draftText = el.draftInput.value.trim();
+    if (!draftText) { el.statusText.textContent = "Type a draft to rewrite first."; return; }
+    if (!savedProfile) { el.statusText.textContent = "Save a style profile first (step 1)."; return; }
+
+    setBusy(true);
+    fetch(API_BASE + "rewrite", {
+      method: "POST",
+      headers: { "content-type": "application/json", "x-app-passcode": el.passcodeInput.value || "" },
+      body: JSON.stringify({ samples: savedProfile.samples, rules: savedProfile.rules, draft: draftText })
+    }).then(function (r) {
+      return r.json().then(function (data) { return { ok: r.ok, status: r.status, data: data }; });
+    }).then(function (res) {
+      setBusy(false);
+      if (!res.ok) {
+        el.statusText.className = "status error";
+        el.statusText.textContent = (res.data && res.data.message) || "Something went wrong. Try again.";
+        return;
+      }
+      el.resultExampleFlag.hidden = true;
+      isExample = false;
+      renderDiff(res.data.result, draftText);
+      refreshBudget();
+    }).catch(function () {
+      setBusy(false);
+      el.statusText.className = "status error";
+      el.statusText.textContent = "Couldn't reach the server. Check your connection and try again.";
+    });
+  });
+
+  el.copyBtn.addEventListener("click", function () {
+    var text = el.diffRewritten.textContent;
+    if (!text) return;
+    try {
+      navigator.clipboard.writeText(text).then(function () {
+        el.statusText.className = "status";
+        el.statusText.textContent = "Copied.";
+        setTimeout(function () { el.statusText.textContent = ""; }, 2000);
+      });
+    } catch (e) {}
+  });
+
+  loadProfile();
+  renderSamples();
+  renderRules();
+  el.exampleFlag.hidden = !isExample;
+  if (savedProfile) { setEditorExpanded(false); } else { setEditorExpanded(true); }
+  el.draftInput.value = EXAMPLE_DRAFT;
+  renderDiff(EXAMPLE_RESULT, EXAMPLE_DRAFT);
+  refreshBudget();
+})();
+</script>
+</body>
+</html>

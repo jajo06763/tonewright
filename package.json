@@ -1,0 +1,16 @@
+{
+  "name": "tonewright-webapp",
+  "version": "1.0.0",
+  "description": "A small shared tool: paste reference text + rules to define a target tone, then paste a draft and get it rewritten to match, with a side-by-side diff of what changed.",
+  "main": "index.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "type": "commonjs",
+  "devDependencies": {
+    "supabase": "^2.117.0"
+  }
+}
