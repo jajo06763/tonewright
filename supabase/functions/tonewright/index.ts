@@ -91,6 +91,7 @@ Rules for segments:
 - Concatenating every segment's "text" (kind:same) or "after" (kind:changed) in order produces the rewritten text.
 - Only mark a segment "changed" where the wording actually differs \u2014 keep unchanged stretches, even whole sentences, as "same" segments.
 - Prefer natural phrase- or sentence-level segments over single words.
+- Write the "notes" and "reason" fields in the same language as the DRAFT (e.g. Dutch draft → Dutch notes and reasons).
 - Do not include markdown fences or any text outside the JSON object.`;
 }
 
