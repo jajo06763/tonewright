@@ -3,87 +3,73 @@
 A small shared tool: paste reference text + rules to define a target tone, then paste a
 draft and get it rewritten to match, with a side-by-side diff of what changed.
 
-Runs as a single Supabase Edge Function that serves the page **and** proxies calls to
-the Anthropic API using a server-side key (never exposed to the browser). A Postgres
-table tracks cumulative spend and stops new requests once your budget is used up.
+**Live app:** https://jajo06763.github.io/tonewright/
+**API:** https://puyzurvbozufyxlqbkca.supabase.co/functions/v1/tonewright
 
-## 1. One-time Supabase setup
+## How it's split
 
-You said you already have a Supabase account/project — use that project for the rest
-of this.
+Two pieces, because Supabase's shared `*.supabase.co` domain refuses to serve a
+working interactive HTML page (it forces `text/plain` + a locked-down CSP as an
+anti-phishing measure — there's no way around this short of a Pro plan + custom
+domain, which isn't worth it here):
+
+- **`docs/index.html`** — the page itself, static HTML/CSS/JS, hosted for free on
+  GitHub Pages from this repo's `main` branch. No secrets in it; it just calls the
+  API below over `fetch`.
+- **`supabase/functions/tonewright/`** — a Supabase Edge Function that holds your
+  Anthropic API key as a secret and proxies calls to Claude Haiku 4.5. Tracks
+  cumulative spend in a Postgres table (`tonewright_budget`) and refuses new
+  requests once the group hits the budget cap.
+
+## Updating the API (backend)
 
 ```bash
 cd ~/tonewright-webapp
-supabase init          # creates supabase/config.toml — safe, won't touch the files already here
-supabase login         # opens a browser to authenticate your Supabase account
-supabase link --project-ref <your-project-ref>
+npx supabase functions deploy tonewright --no-verify-jwt
 ```
 
-Find `<your-project-ref>` in your Supabase dashboard URL
-(`https://supabase.com/dashboard/project/<project-ref>`), or run `supabase projects list`.
+`--no-verify-jwt` is required — it's what lets the page call the API without every
+groupmate needing a Supabase login.
 
-## 2. Push the budget table
+Secrets already set on the linked project (`puyzurvbozufyxlqbkca`, workspace
+`GM@W`): `ANTHROPIC_API_KEY`, `APP_PASSCODE`, `BUDGET_LIMIT_CENTS`. Change any of
+them with:
 
 ```bash
-supabase db push
+npx supabase secrets set BUDGET_LIMIT_CENTS=<new value in cents>
 ```
 
-This creates a single-row `tonewright_budget` table (starts at $0.00) and an
-`tonewright_increment_budget` function the Edge Function uses to add to it atomically.
+Reset the spent counter back to $0 by running this in the Supabase SQL editor:
 
-## 3. Set secrets
+```sql
+update tonewright_budget set total_cents = 0 where id = 1;
+```
 
-Run these with your own values — nothing here should be typed anywhere but your own
-terminal:
+**The real hard cap** is the Anthropic Console workspace spend limit (`tonewright-group`
+workspace, set to $2/month) — that's enforced by Anthropic itself. The in-app counter
+above is a second, faster-reacting layer on top of it, not a replacement.
+
+## Updating the page (frontend)
+
+Edit `docs/index.html` directly, then:
 
 ```bash
-supabase secrets set ANTHROPIC_API_KEY=sk-ant-...      # your Anthropic API key
-supabase secrets set APP_PASSCODE=some-shared-word      # optional but recommended — a word you share with your group
-supabase secrets set BUDGET_LIMIT_CENTS=200             # $2.00; change any time and re-set
+git add docs/index.html
+git commit -m "describe the change"
+git push
 ```
 
-`SUPABASE_URL` and `SUPABASE_SERVICE_ROLE_KEY` don't need to be set — Supabase injects
-those automatically inside Edge Functions.
+GitHub Pages rebuilds automatically (usually under a minute — check
+`gh api repos/jajo06763/tonewright/pages/builds/latest`). If a change doesn't seem
+to show up, it's almost always a stale browser cache — hard-reload or add a `?v=`
+query param.
 
-**Also set the real backstop:** in the Anthropic Console
-([console.anthropic.com](https://console.anthropic.com)), create a workspace dedicated
-to this project (Settings → Workspaces), generate the API key from inside it, and set
-that workspace's monthly spend limit to $2 under Settings → Plans & Billing → Spending
-Limits. That's enforced by Anthropic itself — once hit, the API returns errors no
-matter what this app's own counter says. The app's own `tonewright_budget` counter is a
-second, faster-reacting layer on top of that (it also lets everyone see usage on the
-page itself), not a replacement for it.
+If the API's URL ever changes (e.g. moved to a different Supabase project), update
+the `API_BASE` constant near the top of the `<script>` block in `docs/index.html`.
 
-## 4. Deploy
+## Sharing with the group
 
-```bash
-supabase functions deploy tonewright --no-verify-jwt
-```
-
-`--no-verify-jwt` makes the function reachable by a plain browser visit (no Supabase
-login required) — that's what lets groupmates just open a link. It also means *anyone*
-with the URL could call it, which is exactly why the passcode and the $2 cap both
-exist: set `APP_PASSCODE` in step 3 if you don't want the URL alone to be enough.
-
-The command prints your function's URL, something like:
-
-```
-https://<project-ref>.supabase.co/functions/v1/tonewright
-```
-
-That's the link to share with your group. Give them the passcode separately (chat,
-not in the same message as the link).
-
-## Updating later
-
-- Change the budget: `supabase secrets set BUDGET_LIMIT_CENTS=<new value in cents>`
-- Reset the spent counter: run `update tonewright_budget set total_cents = 0 where id = 1;`
-  in the Supabase SQL editor.
-- Change code: edit files under `supabase/functions/tonewright/`, then re-run the
-  deploy command from step 4.
-
-## Local preview (frontend only, no live rewrite)
-
-`.claude/launch.json` runs a static file server over just the HTML/CSS/JS so you can
-check the layout without deploying. The "Rewrite my text" button won't work there since
-it has no backend to call — use the deployed URL for that.
+Give groupmates the live app link above and the passcode (`Ankie`) separately —
+not in the same message as the link. The repo itself is public (required for GitHub
+Pages to be viewable without a GitHub login), but it contains no secrets — the API
+key only ever lives in Supabase's secret store.
